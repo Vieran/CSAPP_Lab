@@ -170,8 +170,7 @@ int tmin(void) {
 int isTmax(int x) {
 	int max = 1 << 31;
 	max = ~max;  // the maximim 2's complement
-	int midle = x & max;  // if x == max, then midle = x = max
-	int result = midle ^ max;  // if x == max, then result = 0
+	int result = x ^ max;  // if x == max, then result = 0
   return !result;
 }
 /* 
