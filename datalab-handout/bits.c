@@ -244,9 +244,28 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-	// find the left first 1 in xor
-	// find which one on that 
-  return 2;
+	int sign_x = (x >> 31) & 1;
+	int sign_y = (y >> 31) & 1;
+	int flag1 = sign_x & !sign_y;  // x is negative and y is non-negative
+
+	int diff = x ^ y;
+	int flag2 = !diff;
+	int shift_diff = diff >> 1;
+	diff = shift_diff | diff;
+	shift_diff = diff >> 2;
+	diff = shift_diff | diff;
+	shift_diff = diff >> 4;
+	diff = shift_diff | diff;
+	shift_diff = diff >> 8;
+	diff = shift_diff | diff;
+	shift_diff = diff >> 16;
+	diff = shift_diff | diff;
+	int not_diff = ~diff;
+	not_diff = not_diff >> 1;
+	diff = not_diff & diff;
+
+	int flag3= !(diff & x) & !(sign_x ^ sign_y);
+	return (flag1 | flag2 | flag3);
 }
 //4
 /* 
@@ -258,7 +277,13 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+	// return 1 iff x==0
+	// x and negative x are both the same iff x==0
+	int r1 = x >> 31;
+	int neg_x = ~x + 1;
+	int r2 = neg_x >> 31;
+	int result = (r1 | r2) + 1;
+  return result;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -273,7 +298,31 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+	// positive num: find the first 1(left->right) in binary represent
+	// neagtive num: find the first 0(left->fight) in binary represent
+	// don't forget to add 1
+	/*
+	int sign = (x >> 31) & 1;
+	int x1 = (((sign<<31)>>31) & ~x);  // x is negative, then x1 = ~x, otherwise x1 = 0
+	int x2 = (((!sign<<31)>>31) & x);  // x is positive, then x2 = x, otherwise x2 = 0
+	x = x1 + x2;
+	*/
+	int sign = x >> 31;
+	x = (sign & ~x) | (~sign & x);  // sign ? x : ~x
+
+	// xxxxx+1 is enough to represent 1~32
+	// here split them all into 5 part, it's really a fantastic idea!
+	int c4 = !!(x>>16) << 4;
+	x = x >> c4;
+	int c3 = !!(x>>8) << 3;
+	x = x >> c3;
+	int c2 = !!(x>>4) << 2;
+	x = x >> c2;
+	int c1 = !!(x>>2) << 1;
+	x = x >> c1;
+	int c0 = !!(x>>1);
+	x = x >> c0;
+  return (c4 + c3 + c2 + c1 + c0 + x + 1);
 }
 //float
 /* 
@@ -288,7 +337,28 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+	unsigned exp = uf & 0x7f800000;  // 0111 1111 1??? ?...
+	unsigned frac = uf & 0x7fffff;  // 0000 0000 0111 1...
+	exp = exp + 0x800000;
+	/*
+	if (frac & 0x400000 == 0x400000) {
+		exp = exp + 0x800000;
+		frac = frac >> 1;
+	} else {
+		frac = (frac << 1) & 0x7fffff;
+	}
+	*/
+	unsigned sign = uf & 0x80000000;  // 1000 0...
+
+	unsigned result = exp | frac | sign;
+	if (uf == 0)
+		result = 0;
+	if (exp == 0x7f800000 && frac)
+		result = uf;
+	if (uf == 0x80000000)
+		result = uf;
+
+  return result;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
