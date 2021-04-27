@@ -324,15 +324,28 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-	unsigned exp = uf & 0x7f100000;  // 0111 1111 1??? ?...
-	unsigned frac = uf & 0x00007fff;  // 0000 0000 0111 1...
-	unsigned sign = uf & 0x8000000;  // 1000 0...
+	unsigned exp = uf & 0x7f800000;  // 0111 1111 1??? ?...
+	unsigned frac = uf & 0x7fffff;  // 0000 0000 0111 1...
+	exp = exp + 0x800000;
+	/*
+	if (frac & 0x400000 == 0x400000) {
+		exp = exp + 0x800000;
+		frac = frac >> 1;
+	} else {
+		frac = (frac << 1) & 0x7fffff;
+	}
+	*/
+	unsigned sign = uf & 0x80000000;  // 1000 0...
 
-	if (exp == 0x7f100000) //(&& frac != 0)  // NaN or infinate
-		return uf;
+	unsigned result = exp | frac | sign;
+	if (uf == 0)
+		result = 0;
+	if (exp == 0x7f800000 && frac)
+		result = uf;
+	if (uf == 0x80000000)
+		result = uf;
 
-	if (exp == 0)  // informal
-  return 2;
+  return result;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
