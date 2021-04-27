@@ -187,7 +187,8 @@ int allOddBits(int x) {
 	sec_odd = sec_odd | base_odd;
 	int allOddBits = sec_odd << 16;
     allOddBits = allOddBits | sec_odd;
-	int result = x ^ allOddBits;
+	int result = x & allOddBits;
+	result = result ^ allOddBits;
   return !result;
 }
 /* 
@@ -197,8 +198,10 @@ int allOddBits(int x) {
  *   Max ops: 5
  *   Rating: 2
  */
-int negate(int x) {
-  return 2;
+int negate(int x) {  // x need to meet: x < (1<<31)
+	int result = ~x;  // not really understand this
+	result = result + 1;
+  return result;
 }
 //3
 /* 
@@ -211,7 +214,13 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+	// 0x30=110000, 0x39=111001
+	int x_ = x >> 3;
+	int r1 = x_ ^ 0x6;  // x is between 110000~110111
+	int r2 = x ^ 0x38;  // x is 111000
+	int r3 = x ^ 0x39;  // x is 111001
+	int result = (!r1) | (!r2) | (!r3);  // x should be either of above three
+  return result;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -221,7 +230,11 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+	int x_is_zero = !x;
+	int r1 = ((!x_is_zero<<31)>>31) & y;  // in this way, r1=0 if x is zero, or r1=y
+	int r2 = ((x_is_zero<<31)>>31) & z;  // in this way, r2=z if x is zero, or r2=0
+	int result = r1 + r2;
+  return result;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -231,6 +244,8 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
+	// find the left first 1 in xor
+	// find which one on that 
   return 2;
 }
 //4
