@@ -339,24 +339,16 @@ int howManyBits(int x) {
 unsigned floatScale2(unsigned uf) {
 	unsigned exp = uf & 0x7f800000;  // 0111 1111 1??? ?...
 	unsigned frac = uf & 0x7fffff;  // 0000 0000 0111 1...
-	exp = exp + 0x800000;
-	/*
-	if (frac & 0x400000 == 0x400000) {
-		exp = exp + 0x800000;
-		frac = frac >> 1;
-	} else {
-		frac = (frac << 1) & 0x7fffff;
-	}
-	*/
 	unsigned sign = uf & 0x80000000;  // 1000 0...
 
+	if(exp == 0)  // infinity
+		return uf << 1 | sign;
+	if(exp == 0x7f800000)  // NAN
+		return uf;
+	exp = exp + 0x800000;  // exp plus 1
+	if(exp == 0x7f800000)  // NAN
+		return 0x7f800000 | sign;
 	unsigned result = exp | frac | sign;
-	if (uf == 0)
-		result = 0;
-	if (exp == 0x7f800000 && frac)
-		result = uf;
-	if (uf == 0x80000000)
-		result = uf;
 
   return result;
 }
@@ -373,7 +365,26 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+	int exp = (uf >> 23) & 0xff;
+	exp = exp - 127;
+	int sign = (uf & 0x80000000);
+	if(exp > 31)
+		return 0x80000000;
+	if(exp < 0)
+		return 0;
+
+	int frac = (uf & 0x7fffff) | 0x800000;  // don't forget to add 1
+	int result;
+	if(exp > 23)
+		result = frac << (exp - 23);
+	else
+		result = frac >> (23 - exp);
+	if(!((result>>31)^sign))
+		return result;
+	else if(result>>31)  // origin is positive, now is negative, which means overflow
+		return 0x80000000;
+	else  // origin is negative, now is positive, which means need to change sign
+		return ~result+1;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -389,5 +400,11 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+	if(x >= 128)  // too large, overflow
+		return 0xff << 23;
+	if(x <= -127)  // too small, overflow
+		return 0;
+	int exp = x + 127;
+	int result = exp << 23;
+    return result;
 }
